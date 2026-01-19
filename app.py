@@ -523,7 +523,17 @@ TEMPLATES = {
                 body: JSON.stringify({drug_id: drug_id, qty: qty, code: code})
             }).then(res => res.json()).then(data => {
                 if (data.success) {
-                    location.reload();
+                    if (data.completed) {
+                        if (data.system_has_pending) {
+                            alert('本張處方提領完畢！將跳轉至待提領清單。');
+                            window.location.href = "{{ url_for('dashboard') }}";
+                        } else {
+                            alert('所有處方皆已完成！系統將自動登出。');
+                            window.location.href = "{{ url_for('logout') }}";
+                        }
+                    } else {
+                        location.reload();
+                    }
                 } else {
                     alert('錯誤：' + data.msg);
                 }
@@ -1250,13 +1260,25 @@ def pick_drug():
     
     cur.execute('SELECT prescription_id FROM prescription_drugs WHERE id = %s', (drug_id,))
     row = cur.fetchone()
+    
+    completed = False
+    system_has_pending = True
+    
     if row:
         pid = row['prescription_id']
         cur.execute("SELECT count(*) as cnt FROM prescription_drugs WHERE prescription_id = %s AND status = '未領'", (pid,))
         remaining = cur.fetchone()['cnt']
-        if remaining == 0: cur.execute("UPDATE prescriptions SET status = '已完成' WHERE id = %s", (pid,))
+        if remaining == 0: 
+            completed = True
+            cur.execute("UPDATE prescriptions SET status = '已完成' WHERE id = %s", (pid,))
+            
+            # Check if any OTHER prescriptions are pending
+            cur.execute("SELECT count(*) as cnt FROM prescriptions WHERE status != '已完成'")
+            total_pending = cur.fetchone()['cnt']
+            if total_pending == 0: system_has_pending = False
+            
     conn.commit(); conn.close()
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'completed': completed, 'system_has_pending': system_has_pending})
 
 @app.route('/admin')
 def admin():
