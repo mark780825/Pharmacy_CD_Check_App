@@ -134,6 +134,19 @@ TEMPLATES = {
                 </div>
             </div>
             
+            <div class="card mt-3">
+                <div class="card-header bg-success text-white">匯入處方資料 (DRUG.txt)</div>
+                <div class="card-body">
+                    <form action="{{ url_for('upload_prescription') }}" method="post" enctype="multipart/form-data">
+                        <div class="input-group">
+                            <input type="file" name="file" class="form-control" required>
+                            <button class="btn btn-success" type="submit">上傳</button>
+                        </div>
+                        <div class="form-text">請選擇 HIS 匯出的文字檔</div>
+                    </form>
+                </div>
+            </div>
+            
             </div>
 
 
@@ -850,19 +863,8 @@ TEMPLATES = {
     <div class="row">
         <div class="col-md-6">
             <div class="card mb-4">
-                <div class="card-header bg-primary text-white">匯入處方資料</div>
+                <div class="card-header bg-secondary text-white">人員設定</div>
                 <div class="card-body">
-                    <form action="{{ url_for('upload_prescription') }}" method="post" enctype="multipart/form-data">
-                        <label class="form-label">上傳 DRUG.txt 處方檔</label>
-                        <div class="input-group">
-                            <input type="file" name="file" class="form-control" required>
-                            <button class="btn btn-primary" type="submit">匯入資料</button>
-                        </div>
-                        <div class="form-text">請選擇從 HIS 系統匯出的 DRUG.txt 檔案</div>
-                    </form>
-                    
-                    <hr>
-                    
                     <form action="{{ url_for('admin_settings') }}" method="post">
                         <div class="mb-3">
                             <label class="form-label">人員名單 (以逗號分隔)</label>
@@ -1313,7 +1315,7 @@ def upload_prescription():
     f.save(path)
     count = parse_and_import_prescription(path)
     flash(f'成功匯入 {count} 張含管藥處方', 'success')
-    return redirect(url_for('admin'))
+    return redirect(url_for('login'))
 
 @app.route('/upload_controlled_list', methods=['POST'])
 def upload_controlled_list():
