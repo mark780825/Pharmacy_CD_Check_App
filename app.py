@@ -321,7 +321,7 @@ TEMPLATES = {
 
                         <div class="mb-3">
                             <label class="form-label">1. 掃描條碼 或 輸入商品代碼</label>
-                            <input type="text" class="form-control form-control-lg" id="input_code" autocomplete="off" placeholder="掃描或手輸">
+                            <input type="text" class="form-control form-control-lg" id="input_code" autocomplete="off" placeholder="掃描或手輸" style="ime-mode: disabled;">
                             <div id="code_error" class="text-danger small mt-1" style="display:none;">❌ 核對失敗！代碼或條碼不符。</div>
                         </div>
 
@@ -433,6 +433,23 @@ TEMPLATES = {
         // document.getElementById('input_code').addEventListener('change', checkCode); // Removed auto-check
         document.getElementById('input_code').addEventListener('keyup', function(e) {
             if(e.key === 'Enter') checkCode();
+        });
+
+        // [新增] 自動將全形字轉半形 (解決中文輸入法問題)
+        document.getElementById('input_code').addEventListener('input', function() {
+            let val = this.value;
+            let tmp = "";
+            for(let i=0; i<val.length; i++){
+                let c = val.charCodeAt(i);
+                // 0-9 (Fullwidth 0xFF10 - 0xFF19) -> (0x30 - 0x39)
+                if(c >= 0xFF10 && c <= 0xFF19) tmp += String.fromCharCode(c - 0xFEE0);
+                // A-Z (Fullwidth)
+                else if(c >= 0xFF21 && c <= 0xFF3A) tmp += String.fromCharCode(c - 0xFEE0);
+                // a-z (Fullwidth)
+                else if(c >= 0xFF41 && c <= 0xFF5A) tmp += String.fromCharCode(c - 0xFEE0);
+                else tmp += val.charAt(i);
+            }
+            if(tmp !== val) this.value = tmp;
         });
 
         function checkCode() {
