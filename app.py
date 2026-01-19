@@ -134,10 +134,8 @@ TEMPLATES = {
                 </div>
             </div>
             
-            <div class="d-grid mt-3 gap-2">
-
-                 <button class="btn btn-outline-warning" id="btnTransfer">🚚 轉移匯出檔</button>
             </div>
+
 
             <div class="text-center mt-3">
                 <a href="{{ url_for('admin') }}" class="text-muted">後台管理</a>
@@ -171,30 +169,6 @@ TEMPLATES = {
     });
     */
 
-    // [新增] 轉移檔案功能
-    document.getElementById('btnTransfer').addEventListener('click', function() {
-        let btn = this;
-        if(!confirm('即將執行：\n從「來源資料夾」移動 DRUG.txt 到「目標資料夾」\n(若目標已有檔案將被覆蓋)\n\n確定要執行嗎？')) return;
-
-        btn.disabled = true;
-        btn.innerHTML = '轉移中...';
-        
-        fetch('/api/transfer_file', { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-            if(data.success) {
-                alert('✅ 成功：' + data.msg);
-            } else {
-                alert('❌ 失敗：' + data.msg);
-            }
-            btn.disabled = false;
-            btn.innerHTML = '🚚 轉移匯出檔';
-        }).catch(err => {
-            alert('請求錯誤：' + err);
-            btn.disabled = false;
-            btn.innerHTML = '🚚 轉移匯出檔';
-        });
-    });
     </script>
     {% endblock %}
     ''',
@@ -849,34 +823,25 @@ TEMPLATES = {
     <div class="row">
         <div class="col-md-6">
             <div class="card mb-4">
-                <div class="card-header bg-secondary text-white">設定</div>
+                <div class="card-header bg-primary text-white">匯入處方資料</div>
                 <div class="card-body">
+                    <form action="{{ url_for('upload_prescription') }}" method="post" enctype="multipart/form-data">
+                        <label class="form-label">上傳 DRUG.txt 處方檔</label>
+                        <div class="input-group">
+                            <input type="file" name="file" class="form-control" required>
+                            <button class="btn btn-primary" type="submit">匯入資料</button>
+                        </div>
+                        <div class="form-text">請選擇從 HIS 系統匯出的 DRUG.txt 檔案</div>
+                    </form>
+                    
+                    <hr>
+                    
                     <form action="{{ url_for('admin_settings') }}" method="post">
-                        <div class="mb-3">
-                            <label class="form-label">DRUG.txt 資料夾路徑 (讀取用)</label>
-                            <input type="text" name="drug_path" class="form-control" placeholder="C:\path\to\folder" value="{{ settings_path or '' }}">
-                        </div>
-
-                        <hr>
-                        <h6 class="text-primary">檔案轉移設定 (轉移匯出檔)</h6>
-                        <div class="mb-3">
-                            <label class="form-label">A. 轉移來源資料夾 (Source)</label>
-                            <input type="text" name="transfer_source" class="form-control" placeholder="例如: C:\Export" value="{{ transfer_source or '' }}">
-                            <div class="form-text">通常是此電腦匯出 DRUG.txt 的位置</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">B. 轉移目標資料夾 (Destination)</label>
-                            <input type="text" name="transfer_dest" class="form-control" placeholder="例如: T:\SharedData" value="{{ transfer_dest or '' }}">
-                            <div class="form-text">檔案將會被移動到此處 (若已有檔案將會覆蓋)</div>
-                        </div>
-                        <hr>
-                        
                         <div class="mb-3">
                             <label class="form-label">人員名單 (以逗號分隔)</label>
                             <textarea name="pharmacists" class="form-control" rows="3" placeholder="例如：藥師A,藥師B,王大明">{{ settings_pharmacists or '' }}</textarea>
                         </div>
-                        
-                        <button class="btn btn-secondary w-100" type="submit">儲存設定</button>
+                        <button class="btn btn-secondary w-100" type="submit">更新人員設定</button>
                     </form>
                 </div>
             </div>
@@ -910,8 +875,7 @@ TEMPLATES = {
                 <div class="card-header">系統狀態</div>
                 <div class="card-body">
                     <ul>
-                        <li>資料夾路徑：{{ settings_path if settings_path else '(未設定)' }}</li>
-                        <li class="text-primary"><strong>資料庫來源：</strong><br><small>{{ db_file_path }}</small></li>
+                        <li>資料庫來源：雲端資料庫 (Supabase)</li>
                         <li>醫療機構資料：{{ stats['institutions'] }} 筆</li>
                         <li>內建科別資料：{{ stats['departments'] }} 筆 (已載入)</li>
                         <li>管制藥品品項：{{ stats['controlled_drugs'] }} 筆</li>
@@ -1179,38 +1143,8 @@ def login():
 @app.route('/', methods=['POST'])
 @app.route('/', methods=['POST'])
 def login_post():
-    # [新增] 登入時自動執行匯入動作
+    # [移除] 雲端版不再支援自動讀取本地檔案
     import_msg = None
-    imported_something = False
-    
-    try:
-        path = get_setting('drug_path')
-        if path:
-            file_path = os.path.join(path, 'DRUG.txt')
-            if os.path.exists(file_path):
-                try:
-                    count, skipped = parse_and_import_prescription(file_path)
-                    
-                    # 匯入成功後刪除檔案
-                    try:
-                        os.remove(file_path)
-                        # 成功匯入，組成訊息 (包含略過的部分)
-                        import_msg = f'成功匯入 {count} 張處方'
-                        if skipped:
-                            import_msg += f'\n\n以下處方已完成提領，略過匯入：\n' + '\n'.join(skipped)
-                            
-                        imported_something = True
-                    except Exception as ie:
-                        import_msg = f'匯入成功但刪除檔案失敗：{ie}'
-                        # flash(import_msg, 'warning')
-                        
-                except Exception as e:
-                    # 解析失敗
-                    import_msg = f'DRUG.txt 解析失敗：{e}'
-                    # flash(import_msg, 'danger')
-            # 若檔案不存在則安靜略過
-    except Exception as e:
-        print(f"Auto-import error: {e}")
 
     session['user'] = request.form.get('pharmacist_name')
     
@@ -1326,23 +1260,10 @@ def admin():
         'controlled_drugs': drug_count,
         'pending_prescriptions': pending_count
     }
-    settings_path = get_setting('drug_path')
     settings_pharmacists = get_setting('pharmacists')
     
-    # [新增] 讀取轉移設定
-    transfer_source = get_setting('transfer_source')
-    transfer_dest = get_setting('transfer_dest')
-    
-    # [新增] 讀取目前資料庫連線路徑 (for UI Transparency)
-    try:
-        cur_db = conn.execute("PRAGMA database_list").fetchall()
-        # [0] is main
-        db_file_path = cur_db[0][2] if cur_db else 'Unknown'
-    except:
-        db_file_path = 'Error getting path'
-    
     conn.close()
-    return render_template('admin', stats=stats, settings_path=settings_path, settings_pharmacists=settings_pharmacists, transfer_source=transfer_source, transfer_dest=transfer_dest, db_file_path=db_file_path)
+    return render_template('admin', stats=stats, settings_pharmacists=settings_pharmacists)
 
 @app.route('/upload_prescription', methods=['POST'])
 def upload_prescription():
@@ -1390,20 +1311,8 @@ def upload_controlled_list():
 
 @app.route('/admin/settings', methods=['POST'])
 def admin_settings():
-    path = request.form.get('drug_path')
-    if path:
-        if os.path.exists(path) and os.path.isdir(path):
-            update_setting('drug_path', path)
-        else:
-            flash(f'警告：資料夾不存在 ({path})，但已暫存設定。請確認路徑是否正確。', 'warning')
-            update_setting('drug_path', path)
-
-    # [新增] 轉移設定儲存
-    t_source = request.form.get('transfer_source')
-    t_dest = request.form.get('transfer_dest')
-    
-    if t_source is not None: update_setting('transfer_source', t_source)
-    if t_dest is not None: update_setting('transfer_dest', t_dest)
+    # [移除] 本地路徑設定
+    pass
             
     pharmacists = request.form.get('pharmacists')
     if pharmacists is not None:
@@ -1591,41 +1500,7 @@ def history_update():
         print(e)
         return jsonify({'success': False, 'msg': str(e)})
 
-@app.route('/api/import_now', methods=['POST'])
-def import_now():
-    path = get_setting('drug_path')
-    if not path:
-        return jsonify({'success': False, 'msg': '請先至後台設定資料夾路徑'})
-    
-    file_path = os.path.join(path, 'DRUG.txt')
-    if not os.path.exists(file_path):
-        return jsonify({'success': False, 'msg': f'找不到檔案：{file_path}'})
-        
-    try:
-        count, skipped = parse_and_import_prescription(file_path)
-        
-        # [NEW] Auto-delete source file after successful import
-        try:
-            os.remove(file_path)
-        except Exception as e:
-            print(f"Failed to delete {file_path}: {e}")
-            # We don't fail the request, just log it. 
-            # Or should we warn the user?
-            # "Import success but delete failed".
-            msg = f'成功匯入 {count} 張處方，但無法刪除來源檔案 ({str(e)})'
-        
-        else:
-            msg = f'成功匯入 {count} 張處方'
-            if skipped:
-                msg += f'\n\n以下處方已完成提領，略過匯入：\n' + '\n'.join(skipped)
-            
-        return jsonify({'success': True, 'msg': msg, 'count': count})
-    except Exception as e:
-        return jsonify({'success': False, 'msg': f'解析失敗: {str(e)}'})
-
-@app.route('/api/transfer_file', methods=['POST'])
-def transfer_file():
-    return jsonify({'success': False, 'msg': '雲端版本不支援本機檔案轉移功能'})
+# Removed api/import_now and api/transfer_file
 
 def import_institutions_from_df(df):
     conn = get_db()
