@@ -1317,7 +1317,7 @@ def admin():
     dept_count = cur.fetchone()['cnt']
     cur.execute('SELECT count(*) as cnt FROM controlled_drugs')
     drug_count = cur.fetchone()['cnt']
-    cur.execute('SELECT count(*) as cnt FROM prescriptions WHERE status != "已完成"')
+    cur.execute("SELECT count(*) as cnt FROM prescriptions WHERE status != '已完成'")
     pending_count = cur.fetchone()['cnt']
 
     stats = {
