@@ -1,0 +1,3 @@
+cd C:\Users\mark7\Documents\工作\程式設計\Pharmacy_CD_Check_App
+python app.py
+http://localhost:5000

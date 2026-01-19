@@ -1,0 +1,61 @@
+
+[2025-12-15 03:32:48.894815] History Query:
+DB Path (Check): [<sqlite3.Row object at 0x00000259033EE7D0>]
+Params: start=2020-09-16, end=2025-12-15, q_type=patient, q=B200592990
+SQL: 
+        SELECT 
+            pd.id as pd_id, pd.picked_at, pd.picked_by, pd.drug_code, pd.picked_qty, pd.modified_by, pd.modified_at,
+            pd.prescription_id as p_id,
+            p.patient_name, p.patient_id, p.visit_date, p.visit_seq, p.chronic_seq, p.chronic_total, p.institution_code, p.dept_code,
+            m.name as inst_name, d.name as dept_name,
+            cd.name as drug_name
+        FROM prescription_drugs pd
+        JOIN prescriptions p ON pd.prescription_id = p.id
+        LEFT JOIN medical_institutions m ON p.institution_code = m.code
+        LEFT JOIN departments d ON p.dept_code = d.code
+        LEFT JOIN controlled_drugs cd ON pd.drug_code = cd.nh_code
+        WHERE pd.status = '已領'
+        AND date(pd.picked_at) BETWEEN ? AND ?
+     AND p.patient_id LIKE ? ORDER BY pd.picked_at DESC
+SQL Params: ['2020-09-16', '2025-12-15', '%B200592990%']
+
+[2025-12-15 03:32:51.576777] History Query:
+DB Path (Check): [<sqlite3.Row object at 0x00000259033EF0D0>]
+Params: start=2020-09-16, end=2025-12-15, q_type=patient, q=B200592990
+SQL: 
+        SELECT 
+            pd.id as pd_id, pd.picked_at, pd.picked_by, pd.drug_code, pd.picked_qty, pd.modified_by, pd.modified_at,
+            pd.prescription_id as p_id,
+            p.patient_name, p.patient_id, p.visit_date, p.visit_seq, p.chronic_seq, p.chronic_total, p.institution_code, p.dept_code,
+            m.name as inst_name, d.name as dept_name,
+            cd.name as drug_name
+        FROM prescription_drugs pd
+        JOIN prescriptions p ON pd.prescription_id = p.id
+        LEFT JOIN medical_institutions m ON p.institution_code = m.code
+        LEFT JOIN departments d ON p.dept_code = d.code
+        LEFT JOIN controlled_drugs cd ON pd.drug_code = cd.nh_code
+        WHERE pd.status = '已領'
+        AND date(pd.picked_at) BETWEEN ? AND ?
+     AND p.patient_id LIKE ? ORDER BY pd.picked_at DESC
+SQL Params: ['2020-09-16', '2025-12-15', '%B200592990%']
+
+[2025-12-15 03:34:10.421415] History Query:
+DB Path (Check): [(0, 'main', 'C:\\Users\\mark7\\Documents\\工作\\程式設計\\輸出\\pharmacy.db')]
+Params: start=2020-09-16, end=2025-12-15, q_type=patient, q=B200592990
+SQL: 
+        SELECT 
+            pd.id as pd_id, pd.picked_at, pd.picked_by, pd.drug_code, pd.picked_qty, pd.modified_by, pd.modified_at,
+            pd.prescription_id as p_id,
+            p.patient_name, p.patient_id, p.visit_date, p.visit_seq, p.chronic_seq, p.chronic_total, p.institution_code, p.dept_code,
+            m.name as inst_name, d.name as dept_name,
+            cd.name as drug_name
+        FROM prescription_drugs pd
+        JOIN prescriptions p ON pd.prescription_id = p.id
+        LEFT JOIN medical_institutions m ON p.institution_code = m.code
+        LEFT JOIN departments d ON p.dept_code = d.code
+        LEFT JOIN controlled_drugs cd ON pd.drug_code = cd.nh_code
+        WHERE pd.status = '已領'
+        AND date(pd.picked_at) BETWEEN ? AND ?
+     AND p.patient_id LIKE ? ORDER BY pd.picked_at DESC
+SQL Params: ['2020-09-16', '2025-12-15', '%B200592990%']
+ERROR: no such column: pd.modified_by
