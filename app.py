@@ -1246,15 +1246,15 @@ def pick_drug():
     cur = conn.cursor()
     
     # Update status AND drug_code (to actual picked item code)
-    cur.execute('UPDATE prescription_drugs SET picked_qty = %s, drug_code = %s, picked_by = %s, picked_at = %s, status = "已領" WHERE id = %s', (qty, code, session['user'], datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), drug_id))
+    cur.execute("UPDATE prescription_drugs SET picked_qty = %s, drug_code = %s, picked_by = %s, picked_at = %s, status = '已領' WHERE id = %s", (qty, code, session['user'], datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), drug_id))
     
     cur.execute('SELECT prescription_id FROM prescription_drugs WHERE id = %s', (drug_id,))
     row = cur.fetchone()
     if row:
         pid = row['prescription_id']
-        cur.execute('SELECT count(*) as cnt FROM prescription_drugs WHERE prescription_id = %s AND status = "未領"', (pid,))
+        cur.execute("SELECT count(*) as cnt FROM prescription_drugs WHERE prescription_id = %s AND status = '未領'", (pid,))
         remaining = cur.fetchone()['cnt']
-        if remaining == 0: cur.execute('UPDATE prescriptions SET status = "已完成" WHERE id = %s', (pid,))
+        if remaining == 0: cur.execute("UPDATE prescriptions SET status = '已完成' WHERE id = %s", (pid,))
     conn.commit(); conn.close()
     return jsonify({'success': True})
 
