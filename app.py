@@ -1352,7 +1352,15 @@ def upload_controlled_list():
                 data.append((nh, prod, name, bc, '4'))
             except: continue
         conn = get_db()
-        conn.executemany('INSERT OR REPLACE INTO controlled_drugs (nh_code, product_code, name, barcode, level) VALUES (?, ?, ?, ?, ?)', data)
+        conn.executemany('''
+            INSERT INTO controlled_drugs (nh_code, product_code, name, barcode, level) 
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (nh_code) DO UPDATE 
+            SET product_code = EXCLUDED.product_code, 
+                name = EXCLUDED.name, 
+                barcode = EXCLUDED.barcode, 
+                level = EXCLUDED.level
+        ''', data)
         conn.commit(); conn.close()
         flash(f'成功更新 {len(data)} 筆管藥資料', 'success')
     except Exception as e: flash(f'更新失敗：{str(e)}', 'danger')
