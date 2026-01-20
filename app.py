@@ -1606,7 +1606,9 @@ def import_institutions_from_df(df):
             continue
     
     if data_to_insert:
-        cur.executemany('INSERT INTO medical_institutions (code, name) VALUES (%s, %s) ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name', data_to_insert)
+        # [修改] 使用者要求「全覆蓋」
+        cur.execute('DELETE FROM medical_institutions')
+        cur.executemany('INSERT INTO medical_institutions (code, name) VALUES (%s, %s)', data_to_insert)
         conn.commit()
         print(f"成功載入 {len(data_to_insert)} 筆醫療機構資料。")
     conn.close()
