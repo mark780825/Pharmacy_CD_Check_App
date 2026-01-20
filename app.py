@@ -1336,21 +1336,50 @@ def upload_controlled_list():
             try: df = pd.read_csv(f, encoding='cp950')
             except:
                 f.seek(0); df = pd.read_csv(f, encoding='ansi')
-        df.columns = [c.strip() for c in df.columns]
+        df.columns = [str(c).strip() for c in df.columns]
         data = []
+        
+        # Check if we have standard headers
+        has_headers = '健保碼' in df.columns and '名稱' in df.columns
+        
         for _, row in df.iterrows():
             try:
-                nh = str(row['健保碼']).strip(); name = str(row['名稱']).strip()
-                try: prod = str(int(float(row['內部參照']))).strip()
-                except: prod = str(row['內部參照']).strip()
-                bc = None
-                if '條碼' in df.columns:
-                    try: 
-                        raw_bc = row['條碼']
-                        if pd.notna(raw_bc) and str(raw_bc).strip() != '': bc = str(int(float(raw_bc))).strip()
-                    except: bc = str(row['條碼']).strip()
+                if has_headers:
+                    nh = str(row['健保碼']).strip(); name = str(row['名稱']).strip()
+                    try: prod = str(int(float(row['內部參照']))).strip()
+                    except: prod = str(row['內部參照']).strip() if '內部參照' in df.columns else ''
+                    
+                    bc = None
+                    if '條碼' in df.columns:
+                        try: 
+                            raw_bc = row['條碼']
+                            if pd.notna(raw_bc) and str(raw_bc).strip() != '': bc = str(int(float(raw_bc))).strip()
+                        except: bc = str(row['條碼']).strip()
+                else:
+                    # Fallback to positional (0:NH, 1:Prod, 2:Name, 3:Barcode)
+                    if len(row) < 3: continue
+                    nh = str(row.iloc[0]).strip()
+                    prod = str(row.iloc[1]).strip()
+                    name = str(row.iloc[2]).strip()
+                    bc = None
+                    if len(row) > 3:
+                         try: 
+                            raw_bc = row.iloc[3]
+                            if pd.notna(raw_bc) and str(raw_bc).strip() != '': bc = str(int(float(raw_bc))).strip()
+                         except: bc = str(row.iloc[3]).strip()
+                
+                # Basic validation
+                if len(nh) < 5 or name == '': continue
+                
+                # Cleanup .0 from float conversion of codes if happens
+                if prod.endswith('.0'): prod = prod[:-2]
+                
                 data.append((nh, prod, name, bc, '4'))
             except: continue
+        
+        if not data:
+            flash('錯誤：找不到有效資料。請確認 CSV 包含正確標題 (健保碼, 內部參照, 名稱, 條碼) 或至少有正確的欄位順序。', 'danger')
+            return redirect(url_for('admin'))
         conn = get_db()
         cur = conn.cursor()
         
