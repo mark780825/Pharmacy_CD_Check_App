@@ -89,6 +89,14 @@ TEMPLATES = {
                     alert('⚠️ 警告：介面元件載入失敗！\\n\\n請確認您的平板/電腦已連上網際網路，\\n否則「提領」按鈕將無法運作。');
                 }
             });
+
+            // [新增] 防休眠機制 (Keep Alive)
+            // 每 5 分鐘 (300000 ms) 發送一次請求，保持 Render 活躍
+            setInterval(function() {
+                fetch('/api/keep_alive')
+                .then(res => console.log('Keep-alive ping success'))
+                .catch(err => console.error('Keep-alive ping failed', err));
+            }, 300000);
         </script>
     </body>
     </html>
@@ -1542,6 +1550,10 @@ def history_update():
         return jsonify({'success': False, 'msg': str(e)})
 
 # Removed api/import_now and api/transfer_file
+
+@app.route('/api/keep_alive')
+def keep_alive():
+    return jsonify({'status': 'alive', 'timestamp': datetime.datetime.now().isoformat()})
 
 def import_institutions_from_df(df):
     conn = get_db()
