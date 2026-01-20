@@ -1353,17 +1353,16 @@ def upload_controlled_list():
             except: continue
         conn = get_db()
         cur = conn.cursor()
+        
+        # [修改] 使用者要求「全覆蓋」而非合併，因此先清空資料表
+        cur.execute("DELETE FROM controlled_drugs")
+        
         cur.executemany('''
             INSERT INTO controlled_drugs (nh_code, product_code, name, barcode, level) 
             VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (nh_code) DO UPDATE 
-            SET product_code = EXCLUDED.product_code, 
-                name = EXCLUDED.name, 
-                barcode = EXCLUDED.barcode, 
-                level = EXCLUDED.level
         ''', data)
         conn.commit(); conn.close()
-        flash(f'成功更新 {len(data)} 筆管藥資料', 'success')
+        flash(f'成功覆蓋更新，目前共有 {len(data)} 筆管藥資料', 'success')
     except Exception as e: flash(f'更新失敗：{str(e)}', 'danger')
     return redirect(url_for('admin'))
 
