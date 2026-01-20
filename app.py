@@ -142,20 +142,23 @@ TEMPLATES = {
                 </div>
             </div>
             
-            <div class="card mt-3">
-                <div class="card-header bg-success text-white">匯入處方資料 (DRUG.txt)</div>
+            <div class="card mt-3 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-cloud-upload"></i> 匯入處方資料 (DRUG.txt)
+                </div>
                 <div class="card-body">
                     <form action="{{ url_for('upload_prescription') }}" method="post" enctype="multipart/form-data">
                         <div class="input-group">
                             <input type="file" name="file" class="form-control" required>
-                            <button class="btn btn-success" type="submit">上傳</button>
+                            <button class="btn btn-success" type="submit">上傳並匯入</button>
                         </div>
-                        <div class="form-text">請選擇 HIS 匯出的文字檔</div>
+                        <div class="form-text text-muted">請選擇每天從 HIS 系統匯出的 DRUG.txt 文字檔</div>
                     </form>
                 </div>
             </div>
             
-            </div>
+        </div>
+    </div>
 
 
             <div class="text-center mt-3">
