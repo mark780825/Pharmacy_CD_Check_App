@@ -109,7 +109,7 @@ TEMPLATES = {
         <div class="col-md-6 col-lg-5">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title text-center mb-4">藥師登入</h5>
+                    <h5 class="card-title text-center mb-4">藥師登入 (新版)</h5>
                     <!-- <form method="POST" id="loginForm"> -->
                         <div class="d-grid gap-2">
                         {% for p_name in pharmacists %}
