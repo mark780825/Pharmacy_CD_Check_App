@@ -886,23 +886,32 @@ TEMPLATES = {
             <div class="card">
                 <div class="card-header bg-warning text-dark">資料匯入與更新</div>
                 <div class="card-body">
-                    <form action="{{ url_for('upload_controlled_list') }}" method="post" enctype="multipart/form-data" class="mb-4">
-                        <label class="form-label">1. 更新管制藥品清單 CSV</label>
-                        <div class="input-group">
-                            <input type="file" name="file" class="form-control" required>
-                            <button class="btn btn-secondary" type="submit">更新清單</button>
+                    <form action="{{ url_for('upload_controlled_list') }}" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">1. 更新管制藥品清單 CSV</label>
+                            <div class="input-group">
+                                <input type="file" name="file" class="form-control" required>
+                                <button class="btn btn-secondary" type="submit">覆蓋更新清單</button>
+                            </div>
                         </div>
-                        <div class="form-text">CSV欄位：健保碼, 內部參照, 名稱, 條碼</div>
                     </form>
-                    
+                    <form action="{{ url_for('delete_controlled_list') }}" method="post" onsubmit="return confirm('⚠️ 確定要清空所有「管制藥品」資料嗎？\n此動作無法復原！');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm mb-4">🗑️ 清空管制藥品資料庫</button>
+                    </form>
+
                     <hr>
-                    
+
                     <form action="{{ url_for('upload_institutions') }}" method="post" enctype="multipart/form-data">
-                        <label class="form-label">2. 更新醫療機構名冊 CSV</label>
-                        <div class="input-group">
-                            <input type="file" name="file" class="form-control" required>
-                            <button class="btn btn-secondary" type="submit">更新機構</button>
+                        <div class="mb-3">
+                            <label class="form-label">2. 更新醫療機構名冊 CSV</label>
+                            <div class="input-group">
+                                <input type="file" name="file" class="form-control" required>
+                                <button class="btn btn-secondary" type="submit">覆蓋更新名冊</button>
+                            </div>
                         </div>
+                    </form>
+                    <form action="{{ url_for('delete_institutions') }}" method="post" onsubmit="return confirm('⚠️ 確定要清空所有「醫療機構」資料嗎？\n此動作無法復原！');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ 清空醫療機構資料庫</button>
                     </form>
                 </div>
             </div>
@@ -1407,6 +1416,18 @@ def admin_settings():
     flash('設定已更新', 'success')
     return redirect(url_for('admin'))
 
+@app.route('/delete_controlled_list', methods=['POST'])
+def delete_controlled_list():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM controlled_drugs")
+        conn.commit(); conn.close()
+        flash('已清空所有管制藥品資料', 'success')
+    except Exception as e:
+        flash(f'清空失敗：{str(e)}', 'danger')
+    return redirect(url_for('admin'))
+
 @app.route('/upload_institutions', methods=['POST'])
 def upload_institutions():
     if 'file' not in request.files: return 'No file'
@@ -1424,6 +1445,18 @@ def upload_institutions():
     except Exception as e:
         flash(f'更新機構名冊失敗：{str(e)}', 'danger')
 
+    return redirect(url_for('admin'))
+
+@app.route('/delete_institutions', methods=['POST'])
+def delete_institutions():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM medical_institutions")
+        conn.commit(); conn.close()
+        flash('已清空所有醫療機構資料', 'success')
+    except Exception as e:
+        flash(f'清空失敗：{str(e)}', 'danger')
     return redirect(url_for('admin'))
 
 @app.route('/history')
