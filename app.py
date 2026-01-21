@@ -152,11 +152,15 @@ TEMPLATES = {
                             <input type="file" name="file" class="form-control" required>
                             <button class="btn btn-success" type="submit">上傳並匯入</button>
                         </div>
-                        <div class="form-text text-muted">請選擇每天從 HIS 系統匯出的 DRUG.txt 文字檔</div>
+                    <div class="form-text text-muted">請選擇從 HIS 系統匯出的 DRUG.txt 文字檔</div>
                     </form>
                 </div>
             </div>
             
+            <div class="d-grid mt-3">
+                 <a href="{{ url_for('history') }}" class="btn btn-outline-info">📜 查詢提領紀錄</a>
+            </div>
+
         </div>
     </div>
 
