@@ -556,8 +556,16 @@ TEMPLATES = {
                             alert('本張處方提領完畢！將跳轉至待提領清單。');
                             window.location.href = "{{ url_for('dashboard') }}";
                         } else {
-                            alert('所有處方皆已完成！系統將自動登出。');
-                            window.location.href = "{{ url_for('logout') }}";
+                            // alert('所有處方皆已完成！系統將自動登出。');
+                            // Replace modal content with success message
+                            let modalBody = document.querySelector('#pickModal .modal-body');
+                            let modalFooter = document.querySelector('#pickModal .modal-footer');
+                            if(modalBody) modalBody.innerHTML = '<div class="text-center p-5"><h3 class="text-success">🎉 所有處方皆已完成！</h3><p class="mt-3">系統將在 3 秒後自動登出...</p></div>';
+                            if(modalFooter) modalFooter.style.display = 'none';
+                            
+                            setTimeout(() => {
+                                window.location.href = "{{ url_for('logout') }}";
+                            }, 3000);
                         }
                     } else {
                         location.reload();
