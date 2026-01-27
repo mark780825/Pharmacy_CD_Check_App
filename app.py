@@ -1254,8 +1254,11 @@ def upload_prescription():
     path = os.path.join('uploads', f.filename)
     if not os.path.exists('uploads'): os.makedirs('uploads')
     f.save(path)
-    count = parse_and_import_prescription(path)
-    flash(f'成功匯入 {count} 張含管藥處方', 'success')
+    count, skipped = parse_and_import_prescription(path)
+    if skipped:
+        flash(f'成功匯入 {count} 張含管藥處方。另有 {len(skipped)} 張因重複或已完成而略過。', 'warning')
+    else:
+        flash(f'成功匯入 {count} 張含管藥處方', 'success')
     return redirect(url_for('login'))
 
 @app.route('/upload_controlled_list', methods=['POST'])
