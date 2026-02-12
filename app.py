@@ -1273,13 +1273,23 @@ def upload_prescription():
 def upload_controlled_list():
     if 'file' not in request.files: return 'No file'
     f = request.files['file']
+    filename = f.filename.lower() if f.filename else ''
     try:
-        try: df = pd.read_csv(f, encoding='utf-8-sig')
-        except:
-            f.seek(0)
-            try: df = pd.read_csv(f, encoding='cp950')
+        if filename.endswith('.xlsx') or filename.endswith('.xls'):
+            # Read Excel file
+            df = pd.read_excel(f)
+        else:
+            # Read CSV file (with encoding fallbacks)
+            try: df = pd.read_csv(f, encoding='utf-8-sig')
             except:
-                f.seek(0); df = pd.read_csv(f, encoding='ansi')
+                f.seek(0)
+                try: df = pd.read_csv(f, encoding='cp950')
+                except:
+                    f.seek(0)
+                    try: df = pd.read_csv(f, encoding='big5')
+                    except:
+                        # Try GBK as last resort
+                        f.seek(0); df = pd.read_csv(f, encoding='gbk')
         df.columns = [str(c).strip() for c in df.columns]
         data = []
         
