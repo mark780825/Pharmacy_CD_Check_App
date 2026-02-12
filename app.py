@@ -928,6 +928,12 @@ TEMPLATES = {
                     <form action="{{ url_for('delete_institutions') }}" method="post" onsubmit="return confirm('⚠️ 確定要清空所有「醫療機構」資料嗎？\n此動作無法復原！');">
                         <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ 清空醫療機構資料庫</button>
                     </form>
+                    
+                    <hr>
+                    <h6 class="text-danger">⚠️ 安全性設定</h6>
+                    <form action="{{ url_for('admin_enable_rls') }}" method="post" onsubmit="return confirm('確定要為所有資料表開啟 RLS (Row Level Security) 嗎？\n這將限制外部 API 的直接存取權限。');">
+                        <button type="submit" class="btn btn-danger w-100">🔒 開啟資料庫 RLS 防護</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1402,6 +1408,34 @@ def delete_institutions():
         flash('已清空所有醫療機構資料', 'success')
     except Exception as e:
         flash(f'清空失敗：{str(e)}', 'danger')
+    return redirect(url_for('admin'))
+
+@app.route('/admin/enable_rls', methods=['POST'])
+def admin_enable_rls():
+    if not session.get('user'): return redirect(url_for('login'))
+    
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Get tables
+        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+        tables = [row['table_name'] for row in cur.fetchall()]
+        
+        count = 0
+        for table in tables:
+            # Basic validation
+            if not table.replace('_', '').isalnum(): continue
+            
+            # Enable RLS
+            cur.execute(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY;')
+            count += 1
+            
+        conn.commit()
+        conn.close()
+        flash(f'成功為 {count} 個資料表開啟 RLS 安全性設定。', 'success')
+    except Exception as e:
+        flash(f'設定失敗：{str(e)}', 'danger')
     return redirect(url_for('admin'))
 
 @app.route('/history')
