@@ -1418,22 +1418,34 @@ def admin_enable_rls():
         conn = get_db()
         cur = conn.cursor()
         
-        # Get tables
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+        # Get tables (Filter for BASE TABLE only to avoid Views)
+        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")
         tables = [row['table_name'] for row in cur.fetchall()]
         
-        count = 0
+        success_list = []
+        error_list = []
+        
         for table in tables:
             # Basic validation
             if not table.replace('_', '').isalnum(): continue
             
-            # Enable RLS
-            cur.execute(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY;')
-            count += 1
+            try:
+                # Enable RLS
+                cur.execute(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY;')
+                success_list.append(table)
+            except Exception as e:
+                error_list.append(f"{table} ({str(e)})")
             
         conn.commit()
         conn.close()
-        flash(f'成功為 {count} 個資料表開啟 RLS 安全性設定。', 'success')
+        
+        msg = f"已掃描 {len(tables)} 個資料表。"
+        if success_list:
+            msg += f" 成功開啟 RLS: {', '.join(success_list)}。"
+        if error_list:
+            msg += f" 失敗: {', '.join(error_list)}。"
+            
+        flash(msg, 'success' if not error_list else 'warning')
     except Exception as e:
         flash(f'設定失敗：{str(e)}', 'danger')
     return redirect(url_for('admin'))
