@@ -98,6 +98,9 @@ TEMPLATES = {
                 .catch(err => console.error('Keep-alive ping failed', err));
             }, 300000);
         </script>
+        <div class="text-center text-muted mt-5 mb-3 small">
+            System Version: 2026-02-12 13:25 (RLS Debug Patch)
+        </div>
     </body>
     </html>
     ''',
