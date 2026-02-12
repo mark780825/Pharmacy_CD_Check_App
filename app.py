@@ -99,7 +99,7 @@ TEMPLATES = {
             }, 300000);
         </script>
         <div class="text-center text-muted mt-5 mb-3 small">
-            System Version: 2026-02-12 13:25 (RLS Debug Patch)
+            System Version: 2026-02-12 13:45 (RLS Deep Check)
         </div>
     </body>
     </html>
@@ -1421,36 +1421,43 @@ def admin_enable_rls():
         conn = get_db()
         cur = conn.cursor()
         
-        # Get tables (Filter for BASE TABLE only to avoid Views)
-        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")
-        tables = [row['table_name'] for row in cur.fetchall()]
+        # Get tables and their current RLS status
+        # relrowsecurity = True if RLS is enabled
+        cur.execute("""
+            SELECT c.relname, c.relrowsecurity
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' 
+            AND c.relkind = 'r' 
+        """)
+        rows = cur.fetchall()
         
-        success_list = []
-        error_list = []
-        
-        for table in tables:
-            # Basic validation
-            if not table.replace('_', '').isalnum(): continue
+        results = []
+        for row in rows:
+            table_name = row['relname']
+            is_rls_on = row['relrowsecurity']
             
+            status_msg = ""
             try:
-                # Enable RLS
-                cur.execute(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY;')
-                success_list.append(table)
+                # Force Enable
+                cur.execute(f'ALTER TABLE "{table_name}" ENABLE ROW LEVEL SECURITY;')
+                
+                # Check policies - defaulting to deny all if no policies exist
+                # But enabling RLS is the main requirement for the warning.
+                status_msg = "已強制開啟"
             except Exception as e:
-                error_list.append(f"{table} ({str(e)})")
+                status_msg = f"錯誤: {str(e)}"
+            
+            results.append(f"{table_name}: {status_msg}")
             
         conn.commit()
         conn.close()
         
-        msg = f"已掃描 {len(tables)} 個資料表。"
-        if success_list:
-            msg += f" 成功開啟 RLS: {', '.join(success_list)}。"
-        if error_list:
-            msg += f" 失敗: {', '.join(error_list)}。"
-            
-        flash(msg, 'success' if not error_list else 'warning')
+        flash(f"執行結果：{' | '.join(results)}", 'info')
+
     except Exception as e:
-        flash(f'設定失敗：{str(e)}', 'danger')
+        flash(f'全域錯誤：{str(e)}', 'danger')
+        
     return redirect(url_for('admin'))
 
 @app.route('/history')
